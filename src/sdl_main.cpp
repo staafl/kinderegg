@@ -343,12 +343,12 @@ int main(void)
         }
     }
 
-    renderpass& s = g_toy.sound;
-    s.prog = makeShaderFromSource("passthru.vert", "sound.frag");
-    s.uloc_iBlockOffset = glGetUniformLocation(s.prog, "iBlockOffset");
-    s.uloc_iSampleRate = glGetUniformLocation(s.prog, "iSampleRate");
-
-    play_audio();
+//    renderpass& s = g_toy.sound;
+//    s.prog = makeShaderFromSource("passthru.vert", "sound.frag");
+//    s.uloc_iBlockOffset = glGetUniformLocation(s.prog, "iBlockOffset");
+//    s.uloc_iSampleRate = glGetUniformLocation(s.prog, "iSampleRate");
+//
+//    play_audio();
     glViewport(0,0, winw, winh);
 
     int quit = 0;

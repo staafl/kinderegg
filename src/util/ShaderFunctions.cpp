@@ -127,6 +127,42 @@ const std::string GetShaderSource(const char* filename)
 
 /// Once source is obtained from either file or hard-coded map, compile the
 /// shader, release the string memory and return the ID.
+GLuint loadShaderFileFrag(const char* filename, const unsigned long Type)
+{
+    if (filename == NULL)
+        return 0;
+    const std::string shaderSource = GetShaderSource(filename);
+    std::string sourceString(shaderSource);
+
+    if (sourceString.empty())
+        return 0;
+
+    GLuint shaderId = glCreateShader(Type);
+
+    const std::string bufferSource = GetShaderSource("buffer.frag");
+    std::string bufferSourceString(bufferSource);
+    const std::string bufferASource = GetShaderSource("buffera.frag");
+    std::string bufferASourceString(bufferASource);
+    const std::string commonSource = GetShaderSource("common.frag");
+    std::string commonSourceString(commonSource);
+
+    const GLchar* array[4] = {
+      static_cast<const GLchar*>(commonSourceString.c_str()),
+      static_cast<const GLchar*>(bufferSourceString.c_str()),
+      static_cast<const GLchar*>(bufferASourceString.c_str()),
+      static_cast<const GLchar*>(sourceString.c_str())
+    };
+    GLint lengths[4];
+    lengths[0] = static_cast<GLint>(bufferSourceString.length());
+    lengths[1] = static_cast<GLint>(bufferASourceString.length());
+    lengths[2] = static_cast<GLint>(commonSourceString.length());
+    lengths[3] = static_cast<GLint>(sourceString.length());
+    glShaderSource(shaderId, 4, array, lengths);
+    glCompileShader(shaderId);
+
+    return shaderId;
+}
+
 GLuint loadShaderFile(const char* filename, const unsigned long Type)
 {
     if (filename == NULL)
@@ -146,6 +182,7 @@ GLuint loadShaderFile(const char* filename, const unsigned long Type)
     return shaderId;
 }
 
+
 GLuint makeShaderFromSource(
     const char* vert,
     const char* frag,
@@ -162,7 +199,7 @@ GLuint makeShaderFromSource(
     // Vertex and fragment shaders are required
     if ((vertSrc == 0) || (fragSrc == 0))
     {
-        std::cout << "  SHADER NOT COMPILED - source not found." << std::endl;
+        std::cout << "  SHADER NOT COMPILED - sousrce not found." << std::endl;
         return 0;
     }
 

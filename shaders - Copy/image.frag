@@ -44,7 +44,7 @@ vec2 uvSmooth(vec2 uv,vec2 res)
 
 vec4 myenv(vec3 pos, vec3 dir, float period)
 {
-    return texture(iChannel2,dir.xz)+.15;
+    return texture(iChannel2,vec3(0)/*dir.xzy*/)+.15;
 }
 
 vec4 getCol(vec2 uv) { return 
@@ -84,6 +84,5 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 	//fragColor.xyz = col.xyz*(.5+.5*diff)+.1*refl;
 	fragColor.xyz = col.xyz*refl;
 	fragColor.w=1.;
-	fragColor=vec4(0.5,1,1,1);
 }
 
