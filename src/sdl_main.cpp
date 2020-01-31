@@ -40,6 +40,7 @@ struct renderpass {
 
 struct Shadertoy {
     renderpass image;
+    renderpass bufferA;
     renderpass sound;
 };
 
@@ -101,13 +102,13 @@ void PollEvents()
     }
 }
 
-void display()
-{
-    const renderpass& r = g_toy.image;
+void display(renderpass& r) {
     glUseProgram(r.prog);
-    if (r.uloc_iResolution > -1) glUniform3f(r.uloc_iResolution, (float)winw, (float)winh, 1.f);
-    if (r.uloc_iChannelResolution > -1)
-    {
+    if (r.uloc_iResolution > -1) {
+        glUniform3f(r.uloc_iResolution, (float)winw, (float)winh, 1.f);
+    }
+
+    if (r.uloc_iChannelResolution > -1) {
         float resos[] = {
             (float)texdims[3*0+0],
             (float)texdims[3*0+1],
@@ -115,17 +116,21 @@ void display()
             (float)texdims[3*1+0],
             (float)texdims[3*1+1],
             (float)texdims[3*1+2],
-            (float)texdims[3*2+0],
-            (float)texdims[3*2+1],
-            (float)texdims[3*2+2],
+            winw,
+            winh,
+            3, // RGB
             (float)texdims[3*3+0],
             (float)texdims[3*3+1],
             (float)texdims[3*3+2],
         };
         glUniform3fv(r.uloc_iChannelResolution, 4, resos);
     }
-    if (r.uloc_iGlobalTime > -1) glUniform1f(r.uloc_iGlobalTime, g_timer.seconds());
-    if (r.uloc_iMouse > -1) glUniform4f(r.uloc_iMouse, 0.f, 0.f, 0.f, 0.f);
+    if (r.uloc_iGlobalTime > -1) {
+        glUniform1f(r.uloc_iGlobalTime, g_timer.seconds());
+    }
+    if (r.uloc_iMouse > -1) {
+        glUniform4f(r.uloc_iMouse, 0.f, 0.f, 0.f, 0.f);
+    }
 
     SYSTEMTIME stNow;
     GetLocalTime(&stNow);
@@ -138,8 +143,7 @@ void display()
         (float)stNow.wSecond
         );
 
-    for (int i=0; i<4; ++i)
-    {
+    for (int i=0; i<4; ++i) {
         glActiveTexture(GL_TEXTURE0+i);
         glBindTexture(GL_TEXTURE_2D, r.texs[i]);
         if (r.uloc_iChannel[i] > -1) glUniform1i(r.uloc_iChannel[i], i);
@@ -230,64 +234,9 @@ void play_audio()
     SDL_PauseAudio(0); // Start playing
 }
 
+renderpass setupRenderPass(renderpass& r, char* shaderName, int toFrameBuffer) {
+    r.prog = makeShaderFromSource("passthru.vert", shaderName);
 
-int main(void)
-{
-    ///@todo cmd line aargs
-
-    if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
-    {
-        return false;
-    }
-
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-
-    SDL_Window* pWindow = SDL_CreateWindow(
-        shadername, // written to autogen/g_textures.h
-        100, 100,
-        winw, winh,
-#ifdef NDEBUG
-        SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL
-#else
-        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
-#endif
-        );
-    SDL_GetWindowSize(pWindow, &winw, &winh);
-#ifdef NDEBUG
-    SDL_ShowCursor(0);
-#endif
-
-    // thank you http://www.brandonfoltz.com/2013/12/example-using-opengl-3-0-with-sdl2-and-glew/
-    SDL_GLContext glContext = SDL_GL_CreateContext(pWindow);
-    if (glContext == NULL)
-    {
-        printf("There was an error creating the OpenGL context!\n");
-        return 0;
-    }
-
-    const unsigned char *version = glGetString(GL_VERSION);
-    if (version == NULL) 
-    {
-        printf("There was an error creating the OpenGL context!\n");
-        return 1;
-    }
-
-    SDL_GL_MakeCurrent(pWindow, glContext);
-
-    // Don't forget to initialize Glew, turn glewExperimental on to
-    // avoid problems fetching function pointers...
-    glewExperimental = GL_TRUE;
-    const GLenum l_Result = glewInit();
-    if (l_Result != GLEW_OK)
-    {
-        exit(EXIT_FAILURE);
-    }
-
-    renderpass& r = g_toy.image;
-    r.prog = makeShaderFromSource("passthru.vert", "image.frag");
     r.uloc_iResolution = glGetUniformLocation(r.prog, "iResolution");
     r.uloc_iGlobalTime = glGetUniformLocation(r.prog, "iGlobalTime");
     r.uloc_iChannelResolution = glGetUniformLocation(r.prog, "iChannelResolution");
@@ -299,7 +248,25 @@ int main(void)
     r.uloc_iDate = glGetUniformLocation(r.prog, "iDate");
 
     std::cout<<getcwd(NULL, 0)<<std::endl;
-    for (int i=0; i<4; ++i)
+    if (toFrameBuffer) {
+        GLuint FramebufferName = 0;
+        glGenFramebuffers(1, &FramebufferName);
+        glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+        GLuint renderedTexture;
+        glActiveTexture(GL_TEXTURE0+2);
+        glGenTextures(1, &renderedTexture);
+        glBindTexture(GL_TEXTURE_2D, renderedTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, winw, winh, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
+        GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+        glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+        if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            return false;
+    }
+
+    for (int i=0; i<2; ++i)
     {
         char texname[6] = "tex00";
         texname[4] += i;
@@ -361,13 +328,77 @@ int main(void)
 //    s.uloc_iSampleRate = glGetUniformLocation(s.prog, "iSampleRate");
 //
 //    play_audio();
+
+}
+
+int main(void)
+{
+    ///@todo cmd line aargs
+
+    if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
+    {
+        return false;
+    }
+
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+
+    SDL_Window* pWindow = SDL_CreateWindow(
+        shadername, // written to autogen/g_textures.h
+        100, 100,
+        winw, winh,
+#ifdef NDEBUG
+        SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL
+#else
+        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
+#endif
+        );
+    SDL_GetWindowSize(pWindow, &winw, &winh);
+#ifdef NDEBUG
+    SDL_ShowCursor(0);
+#endif
+
+    // thank you http://www.brandonfoltz.com/2013/12/example-using-opengl-3-0-with-sdl2-and-glew/
+    SDL_GLContext glContext = SDL_GL_CreateContext(pWindow);
+    if (glContext == NULL)
+    {
+        printf("There was an error creating the OpenGL context!\n");
+        return 0;
+    }
+
+    const unsigned char *version = glGetString(GL_VERSION);
+    if (version == NULL)
+    {
+        printf("There was an error creating the OpenGL context!\n");
+        return 1;
+    }
+
+    SDL_GL_MakeCurrent(pWindow, glContext);
+
+    // Don't forget to initialize Glew, turn glewExperimental on to
+    // avoid problems fetching function pointers...
+    glewExperimental = GL_TRUE;
+    const GLenum l_Result = glewInit();
+    if (l_Result != GLEW_OK)
+    {
+        exit(EXIT_FAILURE);
+    }
+
+    setupRenderPass(g_toy.image, "image.frag", 0);
     glViewport(0,0, winw, winh);
+    
+    setupRenderPass(g_toy.bufferA, "buffera.frag", 1);
+    glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+    glViewport(0,0,winw,winh);
 
     int quit = 0;
     while (quit == 0)
     {
         PollEvents();
-        display();
+        display(g_toy.bufferA);
+        display(g_toy.image);
         SDL_GL_SwapWindow(pWindow);
     }
 
