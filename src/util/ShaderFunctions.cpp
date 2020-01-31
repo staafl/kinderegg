@@ -208,8 +208,8 @@ GLuint makeShaderFromSource(
 
     GLuint program = glCreateProgram();
 
-    glCompileShader(vertSrc);
-    glCompileShader(fragSrc);
+//    glCompileShader(vertSrc);
+//    glCompileShader(fragSrc);
 
     GLint success = 0;
     glGetShaderiv(vertSrc, GL_COMPILE_STATUS, &success);
