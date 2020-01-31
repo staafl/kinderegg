@@ -1,5 +1,6 @@
 // sdl_main.cpp
 
+#include <direct.h>
 #ifdef _WIN32
 #  define WINDOWS_LEAN_AND_MEAN
 #  define NOMINMAX
@@ -8,6 +9,7 @@
 
 #include <fstream>
 #include <vector>
+#include <iostream>
 
 #include <GL/glew.h>
 #include <SDL.h>
@@ -296,13 +298,18 @@ int main(void)
     r.uloc_iMouse = glGetUniformLocation(r.prog, "iMouse");
     r.uloc_iDate = glGetUniformLocation(r.prog, "iDate");
 
+    std::cout<<getcwd(NULL, 0)<<std::endl;
     for (int i=0; i<4; ++i)
     {
+        char texname[6] = "tex00";
+        texname[4] += i;
         const int w = texdims[3*i];
         const int h = texdims[3*i+1];
         const int d = texdims[3*i+2];
-        if (w == 0)
+        if (w == 0) {
+            std::cout<<"Invalid texture "<<texname<<std::endl;
             continue;
+        }
         GLuint t = 0;
         glActiveTexture(GL_TEXTURE0+i);
         glGenTextures(1, &t);
@@ -316,18 +323,18 @@ int main(void)
         case 4: mode = GL_RGBA; break;
         }
 
-        char texname[6] = "tex00";
-        texname[4] += i;
         std::ifstream file(texname, std::ios::binary);
-        if (!file.is_open())
+        if (!file.is_open()) {
+            std::cout<<"Not read texture "<<texname<<std::endl;
             continue;
+        }
         file.seekg(0, std::ios::end);
         std::streamsize size = file.tellg();
         file.seekg(0, std::ios::beg);
         std::vector<char> buffer(size);
         if (file.read(buffer.data(), size))
         {
-            std::cout<<"Read texture "<<texname<<std::eol;
+            std::cout<<"Read texture "<<texname<<std::endl;
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
