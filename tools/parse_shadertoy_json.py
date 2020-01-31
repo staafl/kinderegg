@@ -222,7 +222,7 @@ def main(argv=None):
 #        print("hi")
 #        dumpTextureFiles(dir, renderpass, name)
 #        print("there")
-        invokeBuild(dir)
+#        invokeBuild(dir)
         invokeBuild(dir)
 #       copyExecutable(dir, name)
 #        print(id)
