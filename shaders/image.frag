@@ -86,5 +86,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 	fragColor.w=1.;
 	fragColor=vec4(1,0.0,0.5,1);
 	fragColor=texture(iChannel0, fragCoord/1000);
+	//fragColor=texture(iChannel2, fragCoord/10);
 }
 

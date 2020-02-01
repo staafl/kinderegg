@@ -4,7 +4,6 @@
 // single pass CFD - with some self consistency fixes
 
 // ...the actual fluid simulation
-
 // this is some "computational flockarooid dynamics" ;)
 // the self-advection is done purely rotational on all scales. 
 // therefore i dont need any divergence-free velocity field. 
@@ -39,6 +38,12 @@ vec2 uvSmooth(vec2 uv,vec2 res)
 }
 
 
+in vec2 UV;
+
+layout(location = 0) out vec4 color;
+
+uniform int iFrame;
+uniform int iTime;
 
 #define RotNum 5
 #define SUPPORT_EVEN_ROTNUM
@@ -63,9 +68,10 @@ float getRot(vec2 pos, vec2 b)
     return rot/float(RotNum)/dot(b,b);
 }
 
-void mainImage( layout(location = 0) out vec4 fragColor, in vec2 fragCoord )
+
+void main()
 {
-    vec2 pos = fragCoord;
+    vec2 pos = UV;
     vec2 b = cos(float(iFrame)*.3-vec2(0,1.57));  // vary curl-evaluation-points in time
     vec2 v=vec2(0);
     float bbMax=.5*Res0.y; bbMax*=bbMax; // take curls up to half screen size
@@ -82,28 +88,29 @@ void mainImage( layout(location = 0) out vec4 fragColor, in vec2 fragCoord )
     }
     
     // perform advection
-    fragColor=textureLod(iChannel0,fract((pos-v*vec2(-1,1)*5.*sqrt(Res0.x/600.))/Res0.xy),0.);
+    color=textureLod(iChannel0,fract((pos-v*vec2(-1,1)*5.*sqrt(Res0.x/600.))/Res0.xy),0.);
     
     // feeding some self-consistency into the velocity field
     // (otherwise velocity would be defined only implicitely by the multi-scale rotation sums)
-    fragColor.xy=mix(fragColor.xy,v*vec2(-1,1)*sqrt(.125)*.9,.025);
+    color.xy=mix(color.xy,v*vec2(-1,1)*sqrt(.125)*.9,.025);
     
     // add a little "motor"
     vec2 c=fract(scuv(iMouse.xy/iResolution.xy))*iResolution.xy;
     vec2 dmouse=texelFetch(iChannel3,ivec2(0),0).zw;
     if (iMouse.x<1.) c=Res0*.5;
-    vec2 scr=fract((fragCoord.xy-c)/Res0.x+.5)-.5;
+    vec2 scr=fract((UV.xy-c)/Res0.x+.5)-.5;
     // slowly rotating current in the center (when mouse not moved yet)
-    if (iMouse.x<1.) fragColor.xy += 0.003*cos(iTime*.3-vec2(0,1.57)) / (dot(scr,scr)/0.05+.05);
+    if (iMouse.x<1.) color.xy += 0.003*cos(iTime*.3-vec2(0,1.57)) / (dot(scr,scr)/0.05+.05);
     // feed mouse motion into flow
-    fragColor.xy += .0003*dmouse/(dot(scr,scr)/0.05+.05);
+    color.xy += .0003*dmouse/(dot(scr,scr)/0.05+.05);
 
     // add some "crunchy" drops to surface
-    fragColor.zw += (texture(iChannel1,fragCoord/Res1*.35).zw-.5)*.002;
-    fragColor.zw += (texture(iChannel1,fragCoord/Res1*.7).zw-.5)*.001;
+    color.zw += (texture(iChannel1,UV/Res1*.35).zw-.5)*.002;
+    color.zw += (texture(iChannel1,UV/Res1*.7).zw-.5)*.001;
     
     // initialization
-    if(iFrame<=4) fragColor=vec4(0);
-    if(KEY_I>.5 ) fragColor=(texture(iChannel1,uvSmooth(fragCoord.xy/Res0.xy*.05,Res1))-.5)*.7;
+    if(iFrame<=4) color=vec4(0);
+    if(KEY_I>.5 ) color=(texture(iChannel1,uvSmooth(UV.xy/Res0.xy*.05,Res1))-.5)*.7;
+    color = vec4(1, 1, 0, 1);
 }
 
