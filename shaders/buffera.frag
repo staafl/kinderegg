@@ -14,9 +14,13 @@
 // for even RotNum uncomment the line #define SUPPORT_EVEN_ROTNUM
 
 #define PI2 6.283185
-
-#define Res0 vec2(textureSize(iChannel0,0))
-#define Res1 vec2(textureSize(iChannel1,0))
+#define RandTex     iChannel0
+#define RandRes     vec2(textureSize(RandTex,0))
+#define EnvTex      iChannel1
+#define EnvRes      vec2(textureSize(EnvTex,0))
+#define BufferTex   iChannel2
+#define BufferRes   vec2(textureSize(BufferTex,0))
+#define Res  (iResolution.xy)
 
 vec2 scuv(vec2 uv) {
     float zoom=1.;
@@ -38,18 +42,21 @@ vec2 uvSmooth(vec2 uv,vec2 res)
 }
 
 
+
+
 in vec2 UV;
-
 layout(location = 0) out vec4 color;
-
 uniform int iFrame;
 uniform int iTime;
 
 #define RotNum 5
 #define SUPPORT_EVEN_ROTNUM
 
-#define keyTex iChannel2
-#define KEY_I (texture(keyTex,vec2((105.5-32.0)/256.0,(0.5+0.0)/3.0)).x)
+
+
+
+//#define keyTex iChannel2
+//#define KEY_I (texture(keyTex,vec2((105.5-32.0)/256.0,(0.5+0.0)/3.0)).x)
 
 const float ang = PI2/float(RotNum);
 mat2 m = mat2(cos(ang),sin(ang),-sin(ang),cos(ang));
@@ -62,7 +69,7 @@ float getRot(vec2 pos, vec2 b)
     float rot=0.0;
     for(int i=0;i<RotNum;i++)
     {
-        rot+=dot(textureLod(iChannel0,((pos+p)/Res0.xy),l).xy-vec2(0.5),p.yx*vec2(1,-1));
+        rot+=dot(textureLod(BufferTex,((pos+p)/BufferRes.xy),l).xy-vec2(0.5),p.yx*vec2(1,-1));
         p = m*p;
     }
     return rot/float(RotNum)/dot(b,b);
@@ -71,10 +78,12 @@ float getRot(vec2 pos, vec2 b)
 
 void main()
 {
+    color = vec4(1, 1, 0, 1);
+    return;
     vec2 pos = UV;
     vec2 b = cos(float(iFrame)*.3-vec2(0,1.57));  // vary curl-evaluation-points in time
     vec2 v=vec2(0);
-    float bbMax=.5*Res0.y; bbMax*=bbMax; // take curls up to half screen size
+    float bbMax=.5*BufferRes.y; bbMax*=bbMax; // take curls up to half screen size
     for(int l=0;l<20;l++)
     {
         if ( dot(b,b) > bbMax ) break;
@@ -88,7 +97,7 @@ void main()
     }
     
     // perform advection
-    color=textureLod(iChannel0,fract((pos-v*vec2(-1,1)*5.*sqrt(Res0.x/600.))/Res0.xy),0.);
+    color=textureLod(BufferTex,fract((pos-v*vec2(-1,1)*5.*sqrt(BufferRes.x/600.))/BufferRes.xy),0.);
     
     // feeding some self-consistency into the velocity field
     // (otherwise velocity would be defined only implicitely by the multi-scale rotation sums)
@@ -97,20 +106,19 @@ void main()
     // add a little "motor"
     vec2 c=fract(scuv(iMouse.xy/iResolution.xy))*iResolution.xy;
     vec2 dmouse=texelFetch(iChannel3,ivec2(0),0).zw;
-    if (iMouse.x<1.) c=Res0*.5;
-    vec2 scr=fract((UV.xy-c)/Res0.x+.5)-.5;
+    if (iMouse.x<1.) c=BufferRes*.5;
+    vec2 scr=fract((UV.xy-c)/BufferRes.x+.5)-.5;
     // slowly rotating current in the center (when mouse not moved yet)
     if (iMouse.x<1.) color.xy += 0.003*cos(iTime*.3-vec2(0,1.57)) / (dot(scr,scr)/0.05+.05);
     // feed mouse motion into flow
     color.xy += .0003*dmouse/(dot(scr,scr)/0.05+.05);
 
     // add some "crunchy" drops to surface
-    color.zw += (texture(iChannel1,UV/Res1*.35).zw-.5)*.002;
-    color.zw += (texture(iChannel1,UV/Res1*.7).zw-.5)*.001;
+    color.zw += (texture(RandTex,UV/RandRes*.35).zw-.5)*.002;
+    color.zw += (texture(RandTex,UV/RandRes*.7).zw-.5)*.001;
     
     // initialization
     if(iFrame<=4) color=vec4(0);
-    if(KEY_I>.5 ) color=(texture(iChannel1,uvSmooth(UV.xy/Res0.xy*.05,Res1))-.5)*.7;
-    color = vec4(1, 1, 0, 1);
+    //if(KEY_I>.5 ) color=(texture(RandTex,uvSmooth(UV.xy/BufferRes.xy*.05,RandRes))-.5)*.7;
 }
 

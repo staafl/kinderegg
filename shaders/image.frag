@@ -13,14 +13,18 @@
 // use mouse to push fluid, press I to init
 
 #define PI2 6.283185
-
-#define Res0 vec2(textureSize(iChannel0,0))
-#define Res1 vec2(textureSize(iChannel1,0))
+#define RandTex     iChannel0
+#define RandRes     vec2(textureSize(RandTex,0))
+#define EnvTex      iChannel1
+#define EnvRes      vec2(textureSize(EnvTex,0))
+#define BufferTex   iChannel2
+#define BufferRes   vec2(textureSize(BufferTex,0))
+#define Res  (iResolution.xy)
 
 vec2 scuv(vec2 uv) {
     float zoom=1.;
     #ifdef SHADEROO
-    zoom=1.-iMouseData.z/1000.;
+    zowom=1.-iMouseData.z/1000.;
     #endif
     return (uv-.5)*1.2*zoom+.5;
 }
@@ -38,17 +42,15 @@ vec2 uvSmooth(vec2 uv,vec2 res)
 
 
 
-#define Res  (iResolution.xy)
 
-#define RandTex iChannel1
 
 vec4 myenv(vec3 pos, vec3 dir, float period)
 {
-    return texture(iChannel2,dir.xz)+.15;
+    return texture(EnvTex,dir.xz)+.15;
 }
 
 vec4 getCol(vec2 uv) { return
-    texture(iChannel0,scuv(uv));
+    texture(BufferTex,scuv(uv));
 }
 float getVal(vec2 uv) { return length(getCol(uv).xyz); }
 
@@ -84,8 +86,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 	//fragColor.xyz = col.xyz*(.5+.5*diff)+.1*refl;
 	fragColor.xyz = col.xyz*refl;
 	fragColor.w=1.;
-	fragColor=vec4(1,0.0,0.5,1);
-	fragColor=texture(iChannel0, fragCoord/1000);
+	//fragColor=vec4(1,0.0,0.5,1);
+	//fragColor=texture(iChannel0, fragCoord/1000);
 	//fragColor=texture(iChannel2, fragCoord/10);
 }
 
