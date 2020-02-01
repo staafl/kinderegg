@@ -412,6 +412,8 @@ int main(void)
 
     setupRenderPass(g_toy.image, "image.frag", 0);
     glViewport(0,0, winw, winh);
+    
+    g_toy.image.texs[2] = g_toy.bufferA.texs[2];
 
 
     int quit = 0;
@@ -421,8 +423,8 @@ int main(void)
         PollEvents();
         display(g_toy.bufferA);
         glBindFramebuffer(GL_FRAMEBUFFER, g_toy.bufferA.FramebufferName);
-//        display(g_toy.image);
-//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        display(g_toy.image);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glRecti(-1,-1,1,1);
         glBindFramebuffer(GL_READ_FRAMEBUFFER, g_toy.bufferA.FramebufferName);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, GL_FRONT);
