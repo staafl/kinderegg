@@ -79,8 +79,8 @@ float getRot(vec2 pos, vec2 b)
 void main()
 {
     vec2 UV = gl_FragCoord.xy / iResolution.xy;
-    //color = texture(RandTex, UV);
-    //return;
+    color = texture(RandTex, vec2(UV.x + iFrame/100, 1 - UV.y));
+    return;
     // color = vec4(1, 1, 0, 1);
     // color = vec4((iTime % 100) / 100.0, 1, 1, 1);
     // return;

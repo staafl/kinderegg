@@ -327,6 +327,7 @@ void setupRenderPass(renderpass& r, char* shaderName, int toFrameBuffer) {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+            mode = GL_RGB;
             glTexImage2D(
                 GL_TEXTURE_2D,
                 0,
@@ -337,10 +338,15 @@ void setupRenderPass(renderpass& r, char* shaderName, int toFrameBuffer) {
                 mode,
                 GL_UNSIGNED_BYTE,
                 &buffer[0]);
+            std::cout<<"THere "<<std::endl;
             glGenerateMipmap(GL_TEXTURE_2D);
+            std::cout<<"WHere "<<std::endl;
             r.texs[i] = t;
+            std::cout<<"XHere "<<std::endl;
         }
     }
+    
+    std::cout<<"Done setting up render pass"<<shaderName<<" "<<std::endl;
 
 //    renderpass& s = g_toy.sound;
 //    s.prog = makeShaderFromSource("passthru.vert", "sound.frag");
