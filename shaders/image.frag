@@ -62,9 +62,15 @@ vec2 getGrad(vec2 uv,float delta)
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
-	fragColor=vec4(1,0.0,0.5,1);
-	return;
 	vec2 uv = fragCoord.xy / iResolution.xy;
+	fragColor = texture(RandTex, uv);
+	return;
+    //vec2 UV = gl_FragCoord.xy / iResolution.xy;
+	//fragColor=texture(iChannel0, fragCoord/100);
+	//fragColor=texture(iChannel1, fragCoord/1000);
+	//fragColor=texture(iChannel2, fragCoord/100);
+	//fragColor=vec4(1,0.0,0.5,1);
+	//return;
 
     // calculate normal from gradient (the faster the higher)
     vec3 n = vec3(-getGrad(uv,1.4/iResolution.x)*.02,1.);
@@ -88,7 +94,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 	//fragColor.xyz = col.xyz*(.5+.5*diff)+.1*refl;
 	fragColor.xyz = col.xyz*refl;
 	fragColor.w=1.;
-	//fragColor=texture(iChannel0, fragCoord/1000);
 	//fragColor=texture(iChannel2, fragCoord/10);
 }
 

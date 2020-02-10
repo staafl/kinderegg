@@ -1,5 +1,7 @@
 @echo off
 setlocal
+call py-set-envvar.bat 2
+set PATH=%PYTHON_HOME%;%PATH%
 cd tools
 call py2 parse_shadertoy_json.py WdVXWy 
 if errorlevel 1 exit /b

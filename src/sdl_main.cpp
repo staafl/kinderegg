@@ -244,6 +244,7 @@ void play_audio()
     SDL_PauseAudio(0); // Start playing
 }
 
+GLuint renderedTexture;
 void setupRenderPass(renderpass& r, char* shaderName, int toFrameBuffer) {
     r.prog = makeShaderFromSource("passthru.vert", shaderName);
 
@@ -257,6 +258,7 @@ void setupRenderPass(renderpass& r, char* shaderName, int toFrameBuffer) {
     r.uloc_iFrame = glGetUniformLocation(r.prog, "iFrame");
     r.uloc_iMouse = glGetUniformLocation(r.prog, "iMouse");
     r.uloc_iDate = glGetUniformLocation(r.prog, "iDate");
+    r.uloc_iTime = glGetUniformLocation(r.prog, "iTime");
 
 //    std::cout<<getcwd(NULL, 0)<<std::endl;
 //    std::cout<<r.uloc_iChannel[0]<<std::endl;
@@ -266,7 +268,6 @@ void setupRenderPass(renderpass& r, char* shaderName, int toFrameBuffer) {
         GLuint FramebufferName = 0;
         glGenFramebuffers(1, &FramebufferName);
         glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-        GLuint renderedTexture;
         glActiveTexture(GL_TEXTURE0+2);
         glGenTextures(1, &renderedTexture);
         glBindTexture(GL_TEXTURE_2D, renderedTexture);
@@ -282,8 +283,8 @@ void setupRenderPass(renderpass& r, char* shaderName, int toFrameBuffer) {
             return;
         }
         r.FramebufferName = FramebufferName;
-        r.texs[2] = renderedTexture;
     }
+    r.texs[2] = renderedTexture;
 
     for (int i=0; i<2; ++i)
     {
@@ -417,11 +418,16 @@ int main(void)
 
 
     int quit = 0;
-    frame += 1;
     while (quit == 0)
     {
+        frame += 1;
         PollEvents();
 
+        /*
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        display(g_toy.bufferA);
+        glRecti(-1,-1,1,1);
+        */
         glBindFramebuffer(GL_FRAMEBUFFER, g_toy.bufferA.FramebufferName);
         display(g_toy.bufferA);
         glRecti(-1,-1,1,1);
@@ -430,18 +436,19 @@ int main(void)
         display(g_toy.image);
         glRecti(-1,-1,1,1);
 
-//        glBindFramebuffer(GL_READ_FRAMEBUFFER, g_toy.bufferA.FramebufferName);
-//        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, GL_FRONT);
-//
-//        GLsizei HalfWindowWidth = (GLsizei)(winw / 2.0f);
-//        GLsizei HalfWindowHeight = (GLsizei)(winh / 2.0f);
-//
-//        // Blit attachment 0 to the lower-left quadrant of the window
-//        glReadBuffer(GL_COLOR_ATTACHMENT0);
-//        glBlitFramebuffer(0, 0, winw, winh,
-//                          0, 0, HalfWindowWidth, HalfWindowHeight,
-//                          GL_COLOR_BUFFER_BIT, GL_LINEAR);
-//        SDL_GL_SwapWindow(pWindow);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, g_toy.bufferA.FramebufferName);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, GL_FRONT);
+
+        GLsizei HalfWindowWidth = (GLsizei)(winw / 2.0f);
+        GLsizei HalfWindowHeight = (GLsizei)(winh / 2.0f);
+
+        // Blit attachment 0 to the lower-left quadrant of the window
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glBlitFramebuffer(0, 0, winw, winh,
+                          0, 0, HalfWindowWidth, HalfWindowHeight,
+                          GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
+        SDL_GL_SwapWindow(pWindow);
     }
 
     SDL_GL_DeleteContext(glContext);
