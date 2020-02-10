@@ -65,7 +65,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
 	vec2 uv = fragCoord.xy / iResolution.xy;
 	fragColor = vec4((iFrame / 120.0) - iFrame / 120, 0, 0, 1);
-	vec4 texSample = texture(RandTex, vec2(uv.x, 1 - uv.y));
+	vec4 texSample = texture(BufferTex, vec2(uv.x, 1 - uv.y));
+	fragColor = texSample;
+	return;
 	// vec4 texSample = texture(RandTex, vec2(uv.x + (iFrame / 100.0) - (iFrame / 100), 1 - uv.y));
 	fragColor = vec4(texSample.x, texSample.y, (iFrame / 120.0) - iFrame / 120, 1);
 	return;

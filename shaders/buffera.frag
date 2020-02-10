@@ -79,13 +79,14 @@ float getRot(vec2 pos, vec2 b)
 void main()
 {
     vec2 UV = gl_FragCoord.xy / iResolution.xy;
-    color = texture(RandTex, vec2(UV.x + iFrame/100, 1 - UV.y));
-    return;
-    // color = vec4(1, 1, 0, 1);
-    // color = vec4((iTime % 100) / 100.0, 1, 1, 1);
-    // return;
+//    color = texture(RandTex, vec2(UV.x + iFrame/100, 1 - UV.y));
+//    return;
+//    // color = vec4(1, 1, 0, 1);
+//    // color = vec4((iTime % 100) / 100.0, 1, 1, 1);
+//    // return;
 
-    vec2 pos = UV;
+    //vec2 pos = UV;
+    vec2 pos = gl_FragCoord.xy;
     vec2 b = cos(float(iFrame)*.3-vec2(0,1.57));  // vary curl-evaluation-points in time
     vec2 v=vec2(0);
     float bbMax=.5*BufferRes.y; bbMax*=bbMax; // take curls up to half screen size
@@ -100,37 +101,32 @@ void main()
         }
         b*=2.0;
     }
-
+    
     // perform advection
     color=textureLod(BufferTex,fract((pos-v*vec2(-1,1)*5.*sqrt(BufferRes.x/600.))/BufferRes.xy),0.);
-
+    
     // feeding some self-consistency into the velocity field
     // (otherwise velocity would be defined only implicitely by the multi-scale rotation sums)
-    color.xy=mix(color.xy,v*vec2(-1,1)*sqrt(.125)*.9,.025);
-
+    //fragColor.xy=mix(fragColor.xy,v*vec2(-1,1)*sqrt(.125)*.9,.025);
+    
     // add a little "motor"
-    vec2 c=fract(scuv(iMouse.xy/iResolution.xy))*iResolution.xy;
-
-    if (iMouse.x<1.)
-        c=BufferRes*.5;
-
-    vec2 scr=fract((UV.xy-c)/BufferRes.x+.5)-.5;
-
-    // slowly rotating current in the center (when mouse not moved yet)
-    if (iMouse.x<1.)
-        color.xy += 0.003*cos(iTime*.3-vec2(0,1.57)) / (dot(scr,scr)/0.05+.05);
-
-    // feed mouse motion into flow
+    vec2 c;//=fract(scuv(iMouse.xy/iResolution.xy))*iResolution.xy;
     //vec2 dmouse=texelFetch(iChannel3,ivec2(0),0).zw;
-    //color.xy += .0003*dmouse/(dot(scr,scr)/0.05+.05);
+    //if (iMouse.x<1.)
+        c=BufferRes*.5;
+    vec2 scr=fract((gl_FragCoord.xy-c)/BufferRes.x+.5)-.5;
+    // slowly rotating current in the center (when mouse not moved yet)
+    // if (iMouse.x<1.)
+        color.xy += 0.003*cos(iTime*.3-vec2(0,1.57)) / (dot(scr,scr)/0.05+.05);
+    // feed mouse motion into flow
+    //fragColor.xy += .0003*dmouse/(dot(scr,scr)/0.05+.05);
 
     // add some "crunchy" drops to surface
-    color.zw += (texture(RandTex,UV/RandRes*.35).zw-.5)*.002;
-    color.zw += (texture(RandTex,UV/RandRes*.7).zw-.5)*.001;
-
+    //fragColor.zw += (texture(RandomTex,gl_FragCoord/RandRes*.35).zw-.5)*.002;
+    //fragColor.zw += (texture(RandomTex,gl_FragCoord/RandRes*.7).zw-.5)*.001;
+    
     // initialization
-    if(iFrame<=4) color=vec4(0);
-    // color = vec4((iTime % 100) / 100.0, 0, 0, 1);
-    //if(KEY_I>.5 ) color=(texture(RandTex,uvSmooth(UV.xy/BufferRes.xy*.05,RandRes))-.5)*.7;
-}
+    //if(iFrame<=4) fragColor=vec4(0);
+    //if(KEY_I>.5 ) fragColor=(texture(iChannel1,uvSmooth(gl_FragCoord.xy/BufferRes.xy*.05,RandRes))-.5)*.7;}
 
+}

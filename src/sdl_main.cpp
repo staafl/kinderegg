@@ -442,6 +442,7 @@ int main(void)
         display(g_toy.image);
         glRecti(-1,-1,1,1);
 
+        /*
         glBindFramebuffer(GL_READ_FRAMEBUFFER, g_toy.bufferA.FramebufferName);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, GL_FRONT);
 
@@ -453,7 +454,7 @@ int main(void)
         glBlitFramebuffer(0, 0, winw, winh,
                           0, 0, HalfWindowWidth, HalfWindowHeight,
                           GL_COLOR_BUFFER_BIT, GL_LINEAR);
-
+        */
         SDL_GL_SwapWindow(pWindow);
     }
 
