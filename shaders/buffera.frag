@@ -107,7 +107,7 @@ void main()
     
     // feeding some self-consistency into the velocity field
     // (otherwise velocity would be defined only implicitely by the multi-scale rotation sums)
-    //fragColor.xy=mix(fragColor.xy,v*vec2(-1,1)*sqrt(.125)*.9,.025);
+    fragColor.xy=mix(fragColor.xy,v*vec2(-1,1)*sqrt(.125)*.9,.025);
     
     // add a little "motor"
     vec2 c;//=fract(scuv(iMouse.xy/iResolution.xy))*iResolution.xy;
