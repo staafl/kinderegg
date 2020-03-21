@@ -43,7 +43,6 @@ struct renderpass {
 
 struct Shadertoy {
     renderpass image;
-    renderpass bufferA;
     renderpass sound;
 };
 
@@ -375,11 +374,11 @@ int main(void)
         shadername, // written to autogen/g_textures.h
         100, 100,
         winw, winh,
-#ifdef NDEBUG
+//#ifdef NDEBUG
         SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL
-#else
-        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
-#endif
+//#else
+//        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
+//#endif
         );
     SDL_GetWindowSize(pWindow, &winw, &winh);
 #ifdef NDEBUG
@@ -413,14 +412,11 @@ int main(void)
     }
 
 
-    setupRenderPass(g_toy.bufferA, "buffera.frag", 1);
     // glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0,0,winw,winh);
 
     setupRenderPass(g_toy.image, "image.frag", 0);
     glViewport(0,0, winw, winh);
-
-    g_toy.image.texs[2] = g_toy.bufferA.texs[2];
 
 
     int quit = 0;
@@ -429,32 +425,10 @@ int main(void)
         frame += 1;
         PollEvents();
 
-        /*
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        display(g_toy.bufferA);
-        glRecti(-1,-1,1,1);
-        */
-        glBindFramebuffer(GL_FRAMEBUFFER, g_toy.bufferA.FramebufferName);
-        display(g_toy.bufferA);
-        glRecti(-1,-1,1,1);
-
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         display(g_toy.image);
         glRecti(-1,-1,1,1);
 
-        /*
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, g_toy.bufferA.FramebufferName);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, GL_FRONT);
-
-        GLsizei HalfWindowWidth = (GLsizei)(winw / 2.0f);
-        GLsizei HalfWindowHeight = (GLsizei)(winh / 2.0f);
-
-        // Blit attachment 0 to the lower-left quadrant of the window
-        glReadBuffer(GL_COLOR_ATTACHMENT0);
-        glBlitFramebuffer(0, 0, winw, winh,
-                          0, 0, HalfWindowWidth, HalfWindowHeight,
-                          GL_COLOR_BUFFER_BIT, GL_LINEAR);
-        */
         SDL_GL_SwapWindow(pWindow);
     }
 

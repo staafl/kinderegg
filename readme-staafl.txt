@@ -14,6 +14,7 @@
 - tools\apikey.txt (shadertoy api key)
 - autogen\g_textures.h (I can't figure out why this isn't regenerated currencly)
     maybe because of that stuff i commented out in parse_shadertoy_json.py
+    anyway, use hardcode_shadertoy.py
 - tools\prods\molten bismuth\sdl2.dll
 
 * files

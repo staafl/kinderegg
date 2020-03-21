@@ -1,105 +1,78 @@
-// created by florian berger (flockaroo) - 2019
+// Created by inigo quilez - iq/2014
 // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
 
-// single pass CFD - with some self consistency fixes
+const mat2 m = mat2( 0.80,  0.60, -0.60,  0.80 );
 
-// drawing the liquid
-
-// same fluid as in "Spilled" - https://www.shadertoy.com/view/MsGSRd
-// ...but with self-consistent-ish velocity field
-// the previous method was just defined implicitely by the rotations on multiple scales
-// here the calculated velocity field is put back into the stored field
-
-// use mouse to push fluid, press I to init
-
-#define PI2 6.283185
-#define RandTex     iChannel0
-#define RandRes     vec2(textureSize(RandTex,0))
-#define EnvTex      iChannel1
-#define EnvRes      vec2(textureSize(EnvTex,0))
-#define BufferTex   iChannel2
-#define BufferRes   vec2(textureSize(BufferTex,0))
-#define Res  (iResolution.xy)
-uniform int iFrame;
-
-vec2 scuv(vec2 uv) {
-    float zoom=1.;
-    #ifdef SHADEROO
-    zowom=1.-iMouseData.z/1000.;
-    #endif
-    return (uv-.5)*1.2*zoom+.5;
-}
-
-vec2 uvSmooth(vec2 uv,vec2 res)
+float hash( vec2 p )
 {
-    // no interpolation
-    //return uv;
-    // sinus interpolation
-    //return uv+.8*sin(uv*res*PI2)/(res*PI2);
-    // iq's polynomial interpolation
-    vec2 f = fract(uv*res);
-    return (uv*res+.5-f+3.*f*f-2.0*f*f*f)/res;
+	float h = dot(p,vec2(127.1,311.7));
+    return -1.0 + 2.0*fract(sin(h)*43758.5453123);
 }
 
-
-
-
-
-vec4 myenv(vec3 pos, vec3 dir, float period)
+float noise( in vec2 p )
 {
-    return texture(EnvTex,dir.xz)+.15;
+    vec2 i = floor( p );
+    vec2 f = fract( p );
+	
+	vec2 u = f*f*(3.0-2.0*f);
+
+    return mix( mix( hash( i + vec2(0.0,0.0) ), 
+                     hash( i + vec2(1.0,0.0) ), u.x),
+                mix( hash( i + vec2(0.0,1.0) ), 
+                     hash( i + vec2(1.0,1.0) ), u.x), u.y);
 }
 
-vec4 getCol(vec2 uv) { return
-    texture(BufferTex,scuv(uv));
-}
-float getVal(vec2 uv) { return length(getCol(uv).xyz); }
-
-vec2 getGrad(vec2 uv,float delta)
+float fbm( vec2 p )
 {
-    vec2 d=vec2(delta,0); return vec2( getVal(uv+d.xy)-getVal(uv-d.xy),
-                                       getVal(uv+d.yx)-getVal(uv-d.yx) )/delta;
+    float f = 0.0;
+    f += 0.5000*noise( p ); p = m*p*2.02;
+    f += 0.2500*noise( p ); p = m*p*2.03;
+    f += 0.1250*noise( p ); p = m*p*2.01;
+    f += 0.0625*noise( p );
+    return f/0.9375;
+}
+
+vec2 fbm2( in vec2 p )
+{
+    return vec2( fbm(p.xy), fbm(p.yx) );
+}
+
+vec3 map( vec2 p )
+{   
+    p *= 0.7;
+
+    float f = dot( fbm2( 1.0*(0.05*iGlobalTime + p + fbm2(-0.05*iGlobalTime+2.0*(p + fbm2(4.0*p)))) ), vec2(1.0,-1.0) );
+
+    float bl = smoothstep( -0.8, 0.8, f );
+
+    float ti = smoothstep( -1.0, 1.0, fbm(p) );
+
+    return mix( mix( vec3(0.50,0.00,0.00), 
+                     vec3(1.00,0.75,0.35), ti ), 
+                     vec3(0.00,0.00,0.02), bl );
 }
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
-	vec2 uv = fragCoord.xy / iResolution.xy;
-	fragColor = vec4((iFrame / 120.0) - iFrame / 120, 0, 0, 1);
-	vec4 texSample = texture(BufferTex, vec2(uv.x, 1 - uv.y));
-	fragColor = texSample;
-	return;
-	// vec4 texSample = texture(RandTex, vec2(uv.x + (iFrame / 100.0) - (iFrame / 100), 1 - uv.y));
-	fragColor = vec4(texSample.x, texSample.y, (iFrame / 120.0) - iFrame / 120, 1);
-	return;
-    //vec2 UV = gl_FragCoord.xy / iResolution.xy;
-	//fragColor=texture(iChannel0, fragCoord/100);
-	//fragColor=texture(iChannel1, fragCoord/1000);
-	//fragColor=texture(iChannel2, fragCoord/100);
-	//fragColor=vec4(1,0.0,0.5,1);
-	//return;
+    vec2 p = (-iResolution.xy+2.0*fragCoord.xy)/iResolution.y;
+    
 
-    // calculate normal from gradient (the faster the higher)
-    vec3 n = vec3(-getGrad(uv,1.4/iResolution.x)*.02,1.);
-    n=normalize(n);
+    float e = 0.0045;
 
-    /*vec3 light = normalize(vec3(-1,1,2));
-    float diff=clamp(dot(n,light),0.,1.0);
-    float spec=clamp(dot(reflect(light,n),vec3(0,0,-1)),0.0,1.0); spec=exp2(log2(spec)*24.0)*2.5;*/
+    vec3 colc = map( p               ); float gc = dot(colc,vec3(0.333));
+    vec3 cola = map( p + vec2(e,0.0) ); float ga = dot(cola,vec3(0.333));
+    vec3 colb = map( p + vec2(0.0,e) ); float gb = dot(colb,vec3(0.333));
+    
+    vec3 nor = normalize( vec3(ga-gc, e, gb-gc ) );
 
-    // evironmental reflection
-    vec2 sc=(fragCoord-Res*.5)/Res.x;
-    vec3 dir=normalize(vec3(sc,-1.));
-    vec3 R=reflect(dir,n);
-    vec3 refl=myenv(vec3(0),R.xzy,1.).xyz;
-
-    // slightly add velocityfield to color - gives it a bit of a 'bismuty' look
-    vec4 col=getCol(uv)+.5;
-    col=mix(vec4(1),col,.35);
-    col.xyz*=.95+-.05*n; // slightly add some normals to color
-
-	//fragColor.xyz = col.xyz*(.5+.5*diff)+.1*refl;
-	fragColor.xyz = col.xyz*refl;
-	fragColor.w=1.;
-	//fragColor=texture(iChannel2, fragCoord/10);
+    vec3 col = colc;
+    col += vec3(1.0,0.7,0.6)*8.0*abs(2.0*gc-ga-gb);
+    col *= 1.0+0.2*nor.y*nor.y;
+    col += 0.05*nor.y*nor.y*nor.y;
+    
+    
+    vec2 q = fragCoord.xy/iResolution.xy;
+    col *= pow(16.0*q.x*q.y*(1.0-q.x)*(1.0-q.y),0.1);
+    
+    fragColor = vec4( col, 1.0 );
 }
-
